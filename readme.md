@@ -1,41 +1,39 @@
 
 
-# 🪙 ZenoPay Float Transfer API Documentation
+# 🧾 ZenoPay Float Transfer API Documentation
 
-The **Float Transfer API** allows merchants or partners to move funds between ZenoPay accounts securely using a two-step process — **initiation** and **confirmation**.
-All requests must include a valid `x-api-key` in the request header.
+The **Float Transfer API** allows businesses or agents to securely transfer float between ZenoPay accounts. The transfer process is done in **two steps** — `initiate` and `confirm`.
 
 ---
 
 ## 🔐 Authentication
 
-All endpoints require the header:
+All requests require an API key in the header:
 
 ```
 x-api-key: YOUR_API_KEY
 ```
 
-Make sure your API key has the correct permissions to perform float transfers.
-
 ---
 
-## 1️⃣ Initiate Float Transfer
+## 🚀 1. Initiate Float Transfer
 
 **Endpoint:**
 `POST https://zenoapi.com/api/payments/float-transfer/initiate/`
 
 ### Description
 
-Initiates a float transfer from the authenticated account to a recipient’s ZenoPay account.
-This call returns a `transfer_reference`, which must be used in the **confirmation** step.
+This endpoint initiates a float transfer between two ZenoPay accounts.
+Once initiated, the transfer will be in a **pending** state until confirmed with a PIN.
 
 ---
 
 ### Request Headers
 
-| Header      | Type   | Required | Description          |
-| ----------- | ------ | -------- | -------------------- |
-| `x-api-key` | string | ✅        | Your ZenoPay API key |
+| Key          | Value            | Required |
+| ------------ | ---------------- | -------- |
+| Content-Type | application/json | ✅        |
+| x-api-key    | Your API key     | ✅        |
 
 ---
 
@@ -49,11 +47,11 @@ This call returns a `transfer_reference`, which must be used in the **confirmati
 }
 ```
 
-| Parameter              | Type   | Required | Description                                          |
-| ---------------------- | ------ | -------- | ---------------------------------------------------- |
-| `recipient_account_id` | string | ✅        | ZenoPay account ID of the receiver                   |
-| `amount`               | number | ✅        | Amount to transfer (in TZS or your account currency) |
-| `note`                 | string | Optional | Optional message or reference for the transfer       |
+| Parameter            | Type   | Required | Description                                  |
+| -------------------- | ------ | -------- | -------------------------------------------- |
+| recipient_account_id | string | ✅        | The ZenoPay account ID of the recipient      |
+| amount               | number | ✅        | Amount to transfer (TZS or default currency) |
+| note                 | string | ❌        | Optional note or reason for the transfer     |
 
 ---
 
@@ -61,36 +59,44 @@ This call returns a `transfer_reference`, which must be used in the **confirmati
 
 ```json
 {
-  "success": true,
-  "message": "Float transfer initiated successfully.",
-  "transfer_reference": "d101d683-8a51-4223-bb31-ef2ba6081126"
+  "status": "pending",
+  "message": "Transfer initiated. Please confirm with your PIN.",
+  "transfer_reference": "8df06a6f-098b-4e27-94ed-1a8a6b2a454a",
+  "recipient": "nombo",
+  "amount": "2000.00",
+  "recipient_account_id": "zp88692522"
 }
 ```
 
-| Field                | Type    | Description                                                            |
-| -------------------- | ------- | ---------------------------------------------------------------------- |
-| `transfer_reference` | string  | Unique identifier for the pending transfer — required for confirmation |
-| `message`            | string  | Confirmation message                                                   |
-| `success`            | boolean | Indicates if the initiation was successful                             |
+| Field                | Description                                     |
+| -------------------- | ----------------------------------------------- |
+| status               | Current status of the transfer (`pending`)      |
+| message              | Human-readable message describing the next step |
+| transfer_reference   | Unique reference ID for confirming the transfer |
+| recipient            | Name or identifier of the recipient             |
+| amount               | Transfer amount                                 |
+| recipient_account_id | The recipient’s ZenoPay account ID              |
 
 ---
 
-## 2️⃣ Confirm Float Transfer
+## ✅ 2. Confirm Float Transfer
 
 **Endpoint:**
 `POST https://zenoapi.com/api/payments/float-transfer/confirm/`
 
 ### Description
 
-Confirms a float transfer using the reference returned from the initiation call and a valid user PIN.
+This endpoint confirms a previously initiated float transfer using your account **PIN**.
+Once confirmed, the transfer will be processed and funds moved to the recipient account.
 
 ---
 
 ### Request Headers
 
-| Header      | Type   | Required | Description          |
-| ----------- | ------ | -------- | -------------------- |
-| `x-api-key` | string | ✅        | Your ZenoPay API key |
+| Key          | Value            | Required |
+| ------------ | ---------------- | -------- |
+| Content-Type | application/json | ✅        |
+| x-api-key    | Your API key     | ✅        |
 
 ---
 
@@ -103,10 +109,10 @@ Confirms a float transfer using the reference returned from the initiation call 
 }
 ```
 
-| Parameter            | Type   | Required | Description                              |
-| -------------------- | ------ | -------- | ---------------------------------------- |
-| `transfer_reference` | string | ✅        | Reference ID received from initiation    |
-| `pin`                | string | ✅        | Authorized transaction PIN of the sender |
+| Parameter          | Type   | Required | Description                                          |
+| ------------------ | ------ | -------- | ---------------------------------------------------- |
+| transfer_reference | string | ✅        | The reference ID returned from the initiate endpoint |
+| pin                | string | ✅        | Your ZenoPay transaction PIN                         |
 
 ---
 
@@ -114,41 +120,36 @@ Confirms a float transfer using the reference returned from the initiation call 
 
 ```json
 {
-  "success": true,
-  "message": "Float transfer confirmed successfully.",
-  "transaction_id": "TXN-841119928",
-  "status": "Completed"
+  "status": "success",
+  "message": "Transfer completed, SMS and email sent.",
+  "amount": "2000.00",
+  "recipient_phone": null
 }
 ```
 
-| Field            | Type    | Description                                          |
-| ---------------- | ------- | ---------------------------------------------------- |
-| `transaction_id` | string  | Unique ID of the completed transaction               |
-| `status`         | string  | Status of the transfer (e.g., `Completed`, `Failed`) |
-| `message`        | string  | Confirmation message                                 |
-| `success`        | boolean | Indicates if the confirmation was successful         |
-
----
-
-## 🚦 Flow Summary
-
-1. **Initiate** → `/float-transfer/initiate/`
-
-   * Generates a `transfer_reference`
-2. **Confirm** → `/float-transfer/confirm/`
-
-   * Completes the transfer using the `transfer_reference` and user `pin`
+| Field           | Description                                        |
+| --------------- | -------------------------------------------------- |
+| status          | Status of the transfer (`success`, `failed`, etc.) |
+| message         | Message indicating result of the operation         |
+| amount          | Transferred amount                                 |
+| recipient_phone | Recipient’s phone number (if available)            |
 
 ---
 
 ## ⚠️ Error Responses
 
-| HTTP Code | Example                                       | Meaning                                |
-| --------- | --------------------------------------------- | -------------------------------------- |
-| `400`     | `{ "error": "Invalid account ID" }`           | Missing or incorrect recipient account |
-| `401`     | `{ "error": "Invalid API key" }`              | Unauthorized request                   |
-| `403`     | `{ "error": "Invalid PIN" }`                  | PIN authentication failed              |
-| `404`     | `{ "error": "Transfer reference not found" }` | Reference expired or invalid           |
-| `500`     | `{ "error": "Internal server error" }`        | Unexpected error from ZenoPay servers  |
+| Status Code | Example                                   | Description                            |
+| ----------- | ----------------------------------------- | -------------------------------------- |
+| 400         | `{"error": "Invalid transfer reference"}` | When the provided reference is invalid |
+| 401         | `{"error": "Unauthorized"}`               | Missing or invalid API key             |
+| 403         | `{"error": "Invalid PIN"}`                | Incorrect confirmation PIN             |
+| 500         | `{"error": "Internal server error"}`      | Something went wrong on the server     |
 
 ---
+
+## 💡 Notes
+
+* Always confirm transfers immediately after initiation to avoid expiry.
+* Ensure the `x-api-key` is securely stored and **never exposed publicly**.
+* The same process applies for **both agent and business accounts**.
+
